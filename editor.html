@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+#display {
+	display: flex;
+	flex-direction: column;
+	margin-bottom: 1em;
+}
+.row {
+	display: flex;
+	flex-direction: row;
+	height: 1em;
+}
+.cell {
+	display: inline-block;
+	border: 1px solid black;
+	width: 1em;
+	height: 1em;
+}
+		</style>
+		<style id="blockstyles"></style>
+	</head>
+	<body>
+		<div id="main">
+			<div id="display"></div>
+			<div id="btns">
+				<button onclick="addRow()">Add row</button>
+				<button onclick="removeRow()">Remove row</button>
+				<button onclick="addColumn()">Add column</button>
+				<button onclick="removeColumn()">Remove column</button>
+				<span id="rowscols"></span>
+				<span id="blocks"></span>
+				<button onclick="exportLevel()">Export level</button>
+				<button onclick="importLevel()">Import level</button>
+			</div>
+		</div>
+		<script>window.addEventListener("error", (e) => alert(`${e.message}:${e.lineno}`))</script>
+		<script>
+level = []
+function addRow() { level.push(""); rectLevel(); updateScreen(); }
+function removeRow() { level.splice(level.length - 1, 1); updateScreen(); }
+function addColumn() {
+	for (var i = 0; i < level.length; i++) {
+		level[i] += " "
+	}
+	updateScreen()
+}
+function removeColumn() {
+	for (var i = 0; i < level.length; i++) {
+		level[i] = level[i].slice(0, -1)
+	}
+	updateScreen()
+}
+function rectLevel() {
+	var maxlen = 0
+	for (var i = 0; i < level.length; i++) {
+		if (level[i].length > maxlen) maxlen = level[i].length
+	}
+	// Apply
+	for (var i = 0; i < level.length; i++) {
+		while (level[i].length < maxlen) {
+			level[i] += " "
+		}
+	}
+}
+function updateScreen() {
+	var rethtml = ""
+	for (var x = 0; x < level.length; x++) {
+		rethtml += `<div class="row">`
+		for (var y = 0; y < level[x].length; y++) {
+			rethtml += `<div class="cell" data-name="${level[x][y]}" onclick="setBlock(this, ${x}, ${y})" onmousemove="if (event.buttons == 1) setBlock(this, ${x}, ${y})"></div>`
+		}
+		rethtml += `</div>`
+	}
+	document.querySelector("#display").innerHTML = rethtml
+	// Rows and columns indicator
+	document.querySelector("#rowscols").innerHTML = `Rows: ${level.length} Cols: ${level[0].length}`
+}
+var blocks = {
+	" ": "white",
+	"=": "black",
+	"^": "rgb(100, 100, 100);\nclip-path: polygon(50% 0%, 0% 100%, 100% 100%)",
+	"#": "rgb(100, 100, 100);\nclip-path: polygon(0 20%, 35% 20%, 50% 0, 65% 20%, 100% 20%, 80% 50%, 100% 80%, 65% 80%, 50% 100%, 30% 80%, 0 80%, 20% 50%)",
+	"O": "radial-gradient(closest-side, rgba(200,200,255,1) 0%, rgba(200,200,255,1) 50%, rgba(100,100,125,1) 50%, rgba(100,100,125,1) 99%, rgba(255,255,255,0) 100%)",
+	"!": "radial-gradient(closest-side, rgba(255,0,0,1) 0%, rgba(255,0,0,1) 89%, rgba(0,0,0,1) 90%, rgba(0,0,0,1) 99%, rgba(255,255,255,0) 100%)",
+	"$": "radial-gradient(closest-side, rgba(255,255,0,1) 0%, rgba(255,255,0,1) 89%, rgba(100,100,0,1) 90%, rgba(100,100,0,1) 99%, rgba(255,255,255,0) 100%)",
+	"~": "blue",
+	"+": "radial-gradient(closest-side, rgba(200,255,200,1) 0%, rgba(200,255,200,1) 50%, rgba(100,100,125,1) 50%, rgba(100,100,125,1) 99%, rgba(255,255,255,0) 100%)",
+}
+var otherblocks = {
+	"@": "yellow",
+	"-": "linear-gradient(135deg, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 40%, rgba(255,255,255,1) 40%, rgba(255,255,255,1) 60%, rgba(0,0,0,1) 60%, rgba(0,0,0,1) 100%)"
+}
+var unkownblock = "gray"
+var _selectedblock = ""
+Object.defineProperty(window, "selectedblock", {
+	get: () => _selectedblock,
+	set: (x) => {
+		_selectedblock = x
+		document.body.dataset.selected = x
+	}
+})
+selectedblock = "="
+document.querySelector("#blocks").innerHTML = (() => {
+	var x = ""
+	for (var i = 0; i < Object.keys(blocks).length; i++) {
+		x += `<div class="cell" data-name="${Object.keys(blocks)[i]}" onclick="selectedblock = '${Object.keys(blocks)[i]}'"></div>`
+	}
+	return x
+})()
+document.querySelector("#blockstyles").innerText = (() => {
+	var x = `.cell { background: ${unkownblock} }\n`
+	for (var i = 0; i < Object.keys(otherblocks).length; i++) {
+		x += `.cell[data-name="${Object.keys(otherblocks)[i]}"] {\n\tbackground: ${Object.values(otherblocks)[i]};\n}\nbody[data-selected="${Object.keys(otherblocks)[i]}"] .cell[data-name="${Object.keys(otherblocks)[i]}"] {\n\tborder-color: red;\n}\n`
+	}
+	for (var i = 0; i < Object.keys(blocks).length; i++) {
+		x += `.cell[data-name="${Object.keys(blocks)[i]}"] {\n\tbackground: ${Object.values(blocks)[i]};\n}\nbody[data-selected="${Object.keys(blocks)[i]}"] .cell[data-name="${Object.keys(blocks)[i]}"] {\n\tborder-color: red;\n}\n`
+	}
+	return x
+})()
+function exportLevel() {
+	var e = document.createElement("a")
+	e.href = "data:text/plain," + encodeURIComponent(level.join("\n"))
+	e.download = "level.txt"
+	e.click()
+}
+function importLevel() {
+	var e = document.createElement("input")
+	e.setAttribute("type", "file")
+	e.click()
+	async function check() {
+		if (e.files[0]) {
+			clearInterval(i)
+			var t = await e.files[0].text()
+			level = t.split("\n")
+			rectLevel()
+			updateScreen()
+		}
+	}
+	var i = setInterval(check, 1000)
+	setTimeout(() => clearInterval(i), 20000)
+}
+function setBlock(e, x, y) {
+	level[x] = level[x].split('');
+	level[x][y] = selectedblock; level[x] = level[x].join('');
+	e.dataset.name = selectedblock;
+}
+		</script>
+	</body>
+</html>

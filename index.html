@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+	<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width">
+		<title>replit</title>
+		<link href="style.css" rel="stylesheet" type="text/css" />
+	</head>
+	<body>
+		<div class="floating">
+			<div class="card">You have <span id="n_coins">0 coins</span></div>
+		</div>
+		<script>window.addEventListener("error", (e) => alert(e.message + ":" + e.lineno))</script>
+		<script type="module" src="platformer.js"></script>
+		<script>
+var _coins = 0;
+Object.defineProperty(window, 'coins', {
+	get: function() {
+		return _coins
+	},
+	set: function(x) {
+		_coins = x
+		document.querySelector("#n_coins").innerText = `${x} coin${(() => { if (x == 1) { return "" } return "s" })()}`
+	}
+});
+function createCard(html) {
+	var e = document.createElement("div")
+	e.classList.add("card")
+	e.innerHTML = html
+	var parent = document.querySelector(".floating")
+	parent.appendChild(e)
+}
+		</script>
+	</body>
+</html>
